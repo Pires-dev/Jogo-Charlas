@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jogo de Pintagem</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Bebas+Neue&family=Press+Start+2P&family=Rajdhani:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-gradient: linear-gradient(to right, #6c0cbb 0%, #477fe7 50%, #82bdee 100%);
+    }
+
+    body {
+      min-height: 20vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background: var(--bg-gradient);
+      gap: 1rem;
+      font-family: sans-serif;
+      padding: 1rem;
+    }
+
+    body.darkMode { background: #1a1a1a; }
+
+    h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 2.5rem;
+      color: white;
+      -webkit-text-stroke: 2px #7F5AF0;
+      text-shadow: 0 4px 0 #5E43B0, 0 8px 10px rgba(0,0,0,0.3);
+      padding: 1rem;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    h2 {
+      font-family: 'Orbitron', cursive;
+      font-size: 1.8rem;
+      color: white;
+      -webkit-text-stroke: 2px #7F5AF0;
+      text-shadow: 0 4px 0 #5E43B0;
+      margin-bottom: 0.5rem;
+    }
+
+    label {
+      font-family: 'Orbitron', cursive;
+      color: black;
+      -webkit-text-stroke: 1px #7F5AF0;
+      font-size: 0.9rem;
+    }
+
+    #canvas {
+      width: min(100%, 600px);
+      min-width: 280px;
+      aspect-ratio: 1 / 1;
+      border: 1px solid #333;
+      cursor: cell;
+      background: white;
+    }
+
+    #canvas.darkMode {
+      border: 4px solid #1a1a1a;
+      box-shadow: 0 0 20px rgba(0,255,255,0.5);
+    }
+
+    #controls, #theme-selector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .btn-tool, .btn-danger {
+      font-family: 'Press Start 2P', cursive;
+      border: none;
+      border-radius: 50px;
+      padding: 0.5rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-tool {
+      background: #db5212;
+      color: white;
+      box-shadow: 0 3px 0 #a32b06;
+    }
+
+    .btn-tool:hover {
+      background: #7e57c2;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 0 #4527a0;
+    }
+
+    .btn-tool:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 0 #4527a0;
+    }
+
+    .btn-tool.active {
+      background: #65bd13;
+      box-shadow: 0 3px 0 #277c12;
+    }
+
+    .btn-danger {
+      background: #c9261a;
+      box-shadow: 0 3px 0 #970606;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #ef5350;
+      box-shadow: 0 5px 0 #d32f2f;
+    }
+
+    .btn-temaClaro, .btn-temaEscuro {
+      border: none;
+      border-radius: 50px;
+      padding: 0.5rem 0.8rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-temaClaro {
+      background: #ffffff;
+      font-family: 'Luckiest Guy';
+      color: white;
+      -webkit-text-stroke: 2px #427ce9;
+    }
+
+    .btn-temaEscuro {
+      background: #333333;
+      font-family: 'Luckiest Guy';
+      color: white;
+      -webkit-text-stroke: 2px #67706fd3;
+    }
+
+    #colorPicker {
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    #colorPicker:hover {
+      transform: scale(1.1);
+    }
+
+    [title] {
+      position: relative;
+    }
+
+    [title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    #game-container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      justify-content: center;
+      width: 100%;
+      max-width: 1100px;
+      flex-wrap: wrap;
+    }
+
+    #inspiration-column {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 150px;
+      max-width: 220px;
+      background-color: #008B8B;
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+
+    .img-btn {
+      font-family: 'Rajdhani', sans-serif;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background: linear-gradient(180deg,#f7f7f7,#e6e6e6);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .img-btn:hover {
+      transform: translateY(-2px);
+      border-color: #7F5AF0;
+    }
+
+    .img-btn.selected {
+      background: linear-gradient(180deg,#dff7d6,#c9f0b7);
+      border-color: #65bd13;
+    }
+
+    #preview-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.95);
+      margin-top: 8px;
+    }
+
+    #preview-wrap img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    #preview-caption {
+      font-weight: 700;
+      font-family: 'Rajdhani', sans-serif;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 920px) {
+      #game-container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #inspiration-column {
+        flex-direction: row;
+        max-width: 100%;
+        overflow-x: auto;
+        padding: 8px;
+      }
+
+      .img-btn {
+        min-width: 120px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.8rem;
+        -webkit-text-stroke: 1px #7F5AF0;
+        padding: 0.5rem;
+      }
+
+      h2 {
+        font-size: 1.4rem;
+      }
+
+      #controls, #theme-selector {
+        gap: 6px;
+        padding: 6px;
+        border-radius: 16px;
+      }
+
+      .btn-tool, .btn-danger, .btn-temaClaro, .btn-temaEscuro {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.7rem;
+      }
+
+      label {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="fundoTitulo">
+    <h1 id="titulo">Kauan Goods</h1>
+  </div>
+
+  <div id="controls">
+    <label for="colorPicker">🎨 Cor:</label>
+    <input type="color" id="colorPicker" title="Selecionar cor">
+
+    <button id="btnPaint" class="btn-tool active" title="Pintar">🖌️ Pintar</button>
+    <button id="btnErase" class="btn-tool" title="Apagar">🧽 Apagar</button>
+    <button id="btnClearAll" class="btn-danger" title="Limpar tudo">🗑️ Limpar Tudo</button>
+  </div>
+
+  <div id="game-container">
+    <canvas id="canvas"></canvas>
+
+    <div id="inspiration-column">
+      <button class="img-btn" data-key="Charmander">Charmander</button>
+      <button class="img-btn" data-key="Mario">Mario</button>
+      <button class="img-btn" data-key="Sonic">Sonic</button>
+      <button class="img-btn" data-key="Miranha">Miranha</button>
+      <button class="img-btn" data-key="Gal.Gorda">Galinha Gorda</button>
+
+      <div id="preview-wrap">
+        <div id="preview-caption">Inspiração</div>
+        <img id="previewImage" alt="Preview da inspiração" src="" />
+        <button id="clearPreview" class="img-btn" style="margin-top:6px; background:#ffdede;">Limpar Inspiração</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="theme-selector">
+    <h2 id="escolhaTemas">Temas:</h2>
+    <button onclick="setTheme('default')" class="btn-temaClaro">Modo Clean ☁️</button>
+    <button onclick="setTheme('darkMode')" class="btn-temaEscuro">Modo Escuro 🌕</button>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.className = theme;
+      document.getElementById('canvas').className = theme;
+      const canvas = document.getElementById('canvas');
+      canvas.style.background = theme === 'darkMode' ? 'gray' : 'white';
+      drawGrid();
+    }
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const colorInput = document.getElementById('colorPicker');
+    const btnErase = document.getElementById('btnErase');
+    const btnPaint = document.getElementById('btnPaint');
+    const btnClearAll = document.getElementById('btnClearAll');
+
+    const cols = 30, rows = 30;
+    let cellW = 0, cellH = 0;
+    let mode = 'paint';
+    let painting = false;
+
+    function resizeCanvas() {
+      const size = Math.min(canvas.clientWidth, canvas.clientHeight);
+      canvas.width = size;
+      canvas.height = size;
+      cellW = canvas.width / cols;
+      cellH = canvas.height / rows;
+      drawGrid();
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 1;
+      
+      for (let x = 0; x <= cols; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * cellW, 0);
+        ctx.lineTo(x * cellW, canvas.height);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y <= rows; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * cellH);
+        ctx.lineTo(canvas.width, y * cellH);
+        ctx.stroke();
+      }
+    }
+
+    function paintOrErase(e) {
+      if (!painting) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const col = Math.floor(mx / cellW);
+      const row = Math.floor(my / cellH);
+
+      if (col < 0 || row < 0 || col >= cols || row >= rows) return;
+
+      if (mode === 'erase') {
+        ctx.clearRect(col * cellW, row * cellH, cellW, cellH);
+        ctx.strokeStyle = '#ccc';
+        ctx.strokeRect(col * cellW, row * cellH, cellW, cellH);
+      } else {
+        ctx.fillStyle = colorInput.value || '#000';
+        ctx.fillRect(col * cellW, row * cellH, cellW, cellH);
+      }
+    }
+
+    const imageMap = {
+      'Charmander': 'Charmander.jpg',
+      'Mario': 'Mario.jpg',
+      'Sonic': 'Sonic.jpg',
+      'Miranha': 'Miranha.jpg',
+      'Gal.Gorda': 'Gal.Gorda.jpg'
+    };
+
+    const btns = document.querySelectorAll('.img-btn[data-key]');
+    const previewImage = document.getElementById('previewImage');
+    const clearPreviewBtn = document.getElementById('clearPreview');
+
+    btns.forEach(b => {
+      b.addEventListener('click', () => {
+        btns.forEach(x => x.classList.remove('selected'));
+        b.classList.add('selected');
+
+        const key = b.dataset.key;
+        const src = imageMap[key];
+        if (src) {
+          previewImage.src = src;
+          previewImage.alt = key;
+          document.getElementById('preview-caption').textContent = key;
+        }
+      });
+    });
+
+    clearPreviewBtn.addEventListener('click', () => {
+      previewImage.src = '';
+      previewImage.alt = '';
+      document.getElementById('preview-caption').textContent = 'Inspiração';
+      btns.forEach(x => x.classList.remove('selected'));
+    });
+
+    btnPaint.addEventListener('click', () => {
+      mode = 'paint';
+      canvas.style.cursor = 'cell';
+      btnPaint.classList.add('active');
+      btnErase.classList.remove('active');
+    });
+
+    btnErase.addEventListener('click', () => {
+      mode = 'erase';
+      canvas.style.cursor = 'not-allowed';
+      btnErase.classList.add('active');
+      btnPaint.classList.remove('active');
+    });
+
+    btnClearAll.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      mode = 'paint';
+      canvas.style.cursor = 'cell';
+      btnPaint.classList.add('active');
+      btnErase.classList.remove('active');
+    });
+
+    canvas.addEventListener('mousedown', () => painting = true);
+    canvas.addEventListener('mouseup', () => painting = false);
+    canvas.addEventListener('mouseleave', () => painting = false);
+    canvas.addEventListener('mousemove', paintOrErase);
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('load', resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
